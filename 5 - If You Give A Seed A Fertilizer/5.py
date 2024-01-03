@@ -82,7 +82,7 @@ def find_min_location(seeds: [int], mappings: []):
         next_sources = []
 
         for source in sources:
-            for (src_s, src_e, dest_s, dest_e) in mapping.map:
+            for src_s, src_e, dest_s, dest_e in mapping.map:
                 if src_s <= source <= src_e:
                     offset = source - src_s
                     destination = dest_s + offset
@@ -111,7 +111,7 @@ Goal:
 Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the lowest 
 location number that corresponds to any of the initial seed numbers?
 """
-
+import numpy as np
 
 def parse_input_with_seed_ranges():
     with open("5_input.txt") as f:
@@ -130,8 +130,8 @@ def parse_input_with_seed_ranges():
                         seed_nums.append(int(seed))
 
                     for i in range(0, len(seed_nums), 2):
-                        range_start = seed_nums[0]
-                        range_end = range_start + seed_nums[1] - 1
+                        range_start = seed_nums[i]
+                        range_end = range_start + seed_nums[i + 1] - 1
                         seed_ranges.append((range_start, range_end))
 
                 elif len(line_split) == 2:
@@ -147,38 +147,34 @@ def parse_input_with_seed_ranges():
     return seed_ranges, mappings
 
 
-def find_min_location_with_seed_ranges(seed_ranges: [(int, int)], mappings: []):
-    sources = seed_ranges
-
-    for idx, mapping in enumerate(mappings):
-        next_sources = []
-
-        if idx == 0:
-            for (seed_start, seed_end) in sources:
-                for seed in range(seed_start, seed_end):
-                    for (src_s, src_e, dest_s, dest_e) in mapping.map:
-                        if src_s <= seed <= src_e:
-                            offset = seed - src_s
-                            destination = dest_s + offset
-
-                    next_sources.append(destination)
-        else:
-            for source in sources:
-                for (src_s, src_e, dest_s, dest_e) in mapping.map:
-                    if src_s <= source <= src_e:
-                        offset = source - src_s
-                        destination = dest_s + offset
-
-                next_sources.append(destination)
-
-        sources = next_sources
-
-    return min(sources)
-
-
 s_range, m = parse_input_with_seed_ranges()
-# minimum = find_min_location_with_seed_ranges(s_range, m)
+m.reverse()
 
 
-print(56931769)  # Printing out result because computation takes 45 minutes
+def resolve_reverse_map(mapping, index):
+    for src_s, src_e, dest_s, dest_e in mapping:
+        if dest_s <= index <= dest_e:
+            return index - dest_s + src_s
+
+    return index
+
+
+def find_min_location_brute_force(start: int, end: int, step: int):
+    for i in range(start, end, step):
+        seed = i
+
+        for mapping in m:
+            seed = resolve_reverse_map(mapping.map, seed)
+
+        for start_range, end_range in np.array(s_range):
+            if start_range <= seed <= end_range:
+                return i
+        else:
+            continue
+
+
+first_iteration = find_min_location_brute_force(0, 100000000, 1000)
+second_iteration = find_min_location_brute_force(first_iteration - 1000, first_iteration + 1, 1)
+
+print(second_iteration)
 # Answer: 56931769
